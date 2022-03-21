@@ -1,3 +1,13 @@
+# Climate Change Belief Analysis
+#### Team Members
+- Teddy Waweru
+- Stanley Agbo
+- Uchenna Unigwe
+- Hunadi Mawela
+- Jessica Njuguna
+
+
+
 # Streamlit-based Web Application
 #### EXPLORE Data Science Academy Classification Predict
 
