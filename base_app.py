@@ -29,7 +29,7 @@ import joblib,os
 import pandas as pd
 
 # Vectorizer
-news_vectorizer = open("resources/tfidfvect.pkl","rb")
+news_vectorizer = open("resources/BNBModel.pkl","rb")
 tweet_cv = joblib.load(news_vectorizer) # loading your vectorizer from the pkl file
 
 # Load your raw data
@@ -39,15 +39,38 @@ raw = pd.read_csv("resources/train.csv")
 def main():
 	"""Tweet Classifier App with Streamlit """
 
-	# Creates a main title and subheader on your page -
-	# these are static across all pages
-	st.title("Tweet Classifer")
-	st.subheader("Climate change tweet classification")
-
 	# Creating sidebar with selection box -
 	# you can create multiple pages this way
 	options = ["Prediction", "Information"]
 	selection = st.sidebar.selectbox("Choose Option", options)
+
+	options_2 = ["PredicT", "Information"]
+	selection_2 = st.sidebar.selectbox("Choose Options", options_2)
+
+	# Creates a main title and subheader on your page -
+	# these are static across all pages
+	st.title("Tweet Classification Model")
+	st.subheader("Climate change tweet classification")
+	st.info(
+		"""
+		In the 21st Century, more companies are interested in building its brand
+		with emphasis on ensuring that their operations, products & services are
+		environmentally friendly and sustainable.
+
+
+		To support market research on climate change, we developed this
+		Machine Learning model, which intends to determine how people perceive
+		climate change, and whether or not they believe it is a real threat.
+
+
+		Providing a robust ML solution will enable our clients to access
+		to a broad base of consumer sentiment, spanning multiple demographic and
+		geographic categories - thus increasing their insights and informing
+		future marketing strategies.
+		"""
+	)
+
+
 
 	# Building out the "Information" page
 	if selection == "Information":
@@ -56,6 +79,7 @@ def main():
 		st.markdown("Some information here")
 
 		st.subheader("Raw Twitter data and label")
+
 		if st.checkbox('Show raw data'): # data is hidden if box is unchecked
 			st.write(raw[['sentiment', 'message']]) # will write the df to the page
 
