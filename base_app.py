@@ -26,7 +26,9 @@ import streamlit as st
 import joblib,os			#Loading the model & accessing OS File System
 from PIL import Image		#Importing logo Image
 
-import matplotlib
+# import plotly.express as 
+
+import matplotlib.pyplot as plt
 
 from wordcloud import WordCloud
 
@@ -51,6 +53,9 @@ tweet_cv = joblib.load(news_vectorizer) # loading your predictive model from the
 # Load your train_df data
 train_df = pd.read_csv("resources/train.csv")
 
+# Load your grouped sentiment data
+grouped_sent_df = pd.read_csv("resources/grouped_sentiment.csv")
+
 # The main function where we will build the actual app
 def main():
 	"""Tweet Classifier App with Streamlit """
@@ -64,6 +69,27 @@ def main():
 	# selection_2 = st.sidebar.selectbox("Choose Options", options_2)
 
 
+
+	def prepare_word_cloud_data(sentiment):
+		vect = TfidfVectorizer(stop_words='english',token_pattern = '[a-z]+\w*')
+		vecs = vect.fit_transform([grouped_sent_df.loc[[sentiment],'clean_msg'].values[0]])
+
+		feature_names = vect.get_feature_names_out()
+
+		dense = vecs.todense()
+		lst = dense.tolist()
+
+		df = pd.DataFrame(lst, columns=feature_names)
+
+		df = df.T.sum(axis=1)
+
+		cloud = WordCloud(background_color= 'white',
+							max_words=200,
+							scale = 2,
+							width= 600,
+							height= 300).generate_from_frequencies(df)
+
+		return cloud
 
 
 
@@ -145,6 +171,13 @@ def main():
 	def exploratory_data_analysis():
 		st.title('Exploratory Data Analysis')
 
+		fig = plt.figure(figsize=(12,6), dpi= 80)
+
+		plt.imshow(prepare_word_cloud_data(0), interpolation='bilinear')
+		plt.title('Common Words')
+		plt.axis('off')
+		st.pyplot(fig = fig)
+
 		st.image('resources/imgs/word_cloud.png'
 
 		)
@@ -158,9 +191,8 @@ def main():
 	def modelling():
 		st.title("Tweet Classification Models")
 
-		pass
-
 	def prediction():
+
 		pass
 
 
