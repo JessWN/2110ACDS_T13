@@ -1,118 +1,116 @@
-"""
 
-    Simple Streamlit webserver application for serving developed classification
-	models.
 
-    Author: Explore Data Science Academy.
-
-    Note:
-    ---------------------------------------------------------------------
-    Please follow the instructions provided within the README.md file
-    located within this directory for guidance on how to use this script
-    correctly.
-    ---------------------------------------------------------------------
-
-    Description: This file is used to launch a minimal streamlit web
-	application. You are expected to extend the functionality of this script
-	as part of your predict project.
-
-	For further help with the Streamlit framework, see:
-
-	https://docs.streamlit.io/en/latest/
-
-"""
-# Streamlit dependencies
 import streamlit as st
+import time
+
+# Streamlit dependencies
 import joblib,os			#Loading the model & accessing OS File System
 from PIL import Image		#Importing logo Image
 from io import BytesIO		#Buffering Images
 
 import numpy as np
 
-import asyncio
-
-
-# import plotly.express as 
 
 import matplotlib.pyplot as plt
 
 from wordcloud import WordCloud
 
 
-#import webpage image
-img = Image.open('resources\imgs\performing-twitter-sentiment-analysis1.png') 
-mask_img = Image.open('resources/imgs/PinClipart.com_call-out-clipart_1617111.png') 
-
-#Set the Page Title
-st.set_page_config(page_title= 'JHUST Inc.: Climate Change Sentiment Classification', page_icon= img )
-
-
 # Data dependencies
 import pandas as pd
+
 
 # Tokenizing the train dataset
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+# Load Website's photo clip art
+img = Image.open('resources\imgs\performing-twitter-sentiment-analysis1.png') 
+#Set the Page Title
+st.set_page_config(page_title= 'JHUST Inc.: Climate Change Sentiment Classification',
+					page_icon= img,
+					layout="wide",
+					menu_items = {
+							'Report a Bug': 'https://www.google.com'
 
-async def load_data():
-	"""Function to load data asynchronously
-	"""	
-	
-	pass
+					})
 
-# Prediction Model
-news_vectorizer = open("resources/BNBModel.pkl","rb")
-tweet_cv = joblib.load(news_vectorizer) # loading your predictive model from the pkl file
-
-# Load your train_df data
-train_df = pd.read_csv("resources/train.csv")
-
-# Load the grouped sentiment data
-grouped_sent_df = pd.read_csv("resources/grouped_sentiment.csv")
-
-
-SENTIMENT_DICT = {
-	0: 'Anti-Climate Change', 1: 'Netral',
-	2: 'Pro-Climate Change', 3: 'Climate Change News Related'
+page_bg_img = '''
+<style>
+body {
+background-image: url("https://images.unsplash.com/photo-1542281286-9e0a16bb7366");
+background-size: cover;
 }
+</style>
+'''
+
+st.markdown(page_bg_img, unsafe_allow_html=True)
+
 
 # The main function where we will build the actual app
 def main():
 	"""Tweet Classifier App with Streamlit """
 
-	# Creating sidebar with selection box -
-	# you can create multiple pages this way
-	# options = ["Prediction", "Information"]
-	# selection = st.sidebar.selectbox("Choose Option", options)
-
-	# options_2 = ["PredicT", "Information"]
-	# selection_2 = st.sidebar.selectbox("Choose Options", options_2)
+	SENTIMENT_DICT = {
+		0: 'Anti-Climate Change', 1: 'Netral',
+		2: 'Pro-Climate Change', 3: 'Climate Change News Related'
+	}
 
 
-	mask = np.array(Image.open('resources/imgs/callout_1.png'))
-
-	# mask
-
-	def transform_format(val):
-		if val == 0:
-			return 255
-		else:
-			return val
 
 
-	trans_mask = np.ndarray((mask.shape[0],mask.shape[1]), np.int32)
+
+	@st.experimental_singleton
+	def load_models():
+		# Prediction Model
+		news_vectorizer = open("resources/BNBModel.pkl","rb")
+		tweet_cv = joblib.load(news_vectorizer) # loading your predictive model from the pkl file
+
+		return news_vectorizer
+
+	@st.experimental_singleton
+	def load_mask():
+
+		# mask
+		mask = np.array(Image.open('resources/imgs/callout_1.png'))
+		def transform_format(val):
+			if val == 0:
+				return 255
+			else:
+				return val
 
 
-	for k in range(len(mask)):
-		# print(mask[k])
-		trans_mask[k] = list(map(transform_format,mask[k]))
+		trans_mask = np.ndarray((mask.shape[0],mask.shape[1]), np.int32)
+		for k in range(len(mask)):
+			# print(mask[k])
+			trans_mask[k] = list(map(transform_format,mask[k]))
 
-	def prepare_word_cloud_data(sentiment):
+		return trans_mask
 
 
+	@st.experimental_singleton
+	def load_datasets():
+		# global train_df, grouped_sent_df
+		# Load the train_df dataset
+		train_df = pd.read_csv("resources/train.csv")
+
+		# Load the grouped sentiment data
+		grouped_sent_df = pd.read_csv("resources/grouped_sentiment.csv")
+
+		return train_df, grouped_sent_df
+		
+
+	@st.experimental_singleton
+	def prepare_word_cloud_data(sentiment) -> float:
+
+
+		_, df = load_datasets()
+		print('{} to load msk'.format(time.time()))
+		mask = load_mask()
+		print('{} to finish load msk'.format(time.time()))
 
 		vect = TfidfVectorizer(stop_words='english',token_pattern = '[a-z]+\w*')
-		vecs = vect.fit_transform([grouped_sent_df.loc[[sentiment],'clean_msg'].values[0]])
+		vecs = vect.fit_transform([df.loc[[sentiment],'clean_msg'].values[0]])
+		print()
 
 		feature_names = vect.get_feature_names_out()
 
@@ -124,11 +122,11 @@ def main():
 		df = df.T.sum(axis=1)
 
 		cloud = WordCloud(background_color= 'white',
-							max_words=200,
+							max_words=100,
 							scale = 2,
 							width= 600,
 							height= 300,
-							mask = trans_mask).generate_from_frequencies(df)
+							mask = mask).generate_from_frequencies(df)
 
 		return cloud
 
@@ -143,7 +141,9 @@ def main():
 	# these are static across all pages
 
 	# Introductory Page, describing the solution
+	# @st.experimental_memo
 	def introduction_page():
+
 
 		st.title("Climate Change Sentiment Classification")
 		st.markdown('---')
@@ -152,6 +152,7 @@ def main():
 		st.markdown(' - Jessica Njuguna \n - Hunadi Mawela \n - Uchenna Unigwe \n - Stanley Agbo \n - Teddy Waweru \n')
 		st.markdown('## Introduction')
 		st.markdown('---')
+
 
 		#Climate Change Narrative
 		st.markdown(
@@ -256,7 +257,49 @@ def main():
 	def modelling():
 		st.title("Tweet Classification Models")
 
+		model_options = ['Model 1:', 'Model 2:']
+
+		model_selection = st.selectbox("Choose Option", model_options)
+
+		if model_selection == 'Model 1:':
+			st.markdown(
+				"""
+				The model works as such with the folowing parameters. Weutlized the following paramters to achieve an accuracy score of X.
+				"""
+
+			)
+
+		elif model_selection == 'Model 2:':
+			st.markdown(
+				"""
+				The model works as such with the folowing parameters. Weutlized the following paramters to achieve an accuracy score of X.
+				"""
+
+			)
+
+
 	def prediction():
+		col1, col2 = st.columns([3,8])
+
+		with col1:
+			st.markdown('#### Model Selection')
+			model_options = ['Model 1:', 'Model 2:']
+			model_selection = st.selectbox('Select Model to Test:', model_options)
+			st.markdown('---')
+			if model_selection == 'Model 1:':
+				model = load_models()
+				st.markdown('{}'.format('this model'))
+			elif model_selection == 'Model 2:':
+				model = load_models()
+				st.markdown('{}'.format('this model'))
+
+		with col2:
+			tweet_text = st.text_area("Enter Tweet","Enter text here.")
+			st.markdown('Else, select Random sample from test data.')
+
+			if st.button('Select Random'):
+				pass
+
 
 		pass
 
@@ -276,6 +319,8 @@ def main():
 
 	#Load function depending on radio selected above.
 	BROWSE_PAGES[page]()
+
+
 
 	# # Building out the "Information" page
 	# if selection == "Information":
@@ -309,7 +354,13 @@ def main():
 
 # Required to let Streamlit instantiate our web app.  
 if __name__ == '__main__':
+	print('----Loading Website-----')
+
+	print(time.time())
+
 	main()
+
+	print(time.time())
 
 
 
