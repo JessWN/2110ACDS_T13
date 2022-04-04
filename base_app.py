@@ -25,6 +25,12 @@
 import streamlit as st
 import joblib,os			#Loading the model & accessing OS File System
 from PIL import Image		#Importing logo Image
+from io import BytesIO		#Buffering Images
+
+import numpy as np
+
+import asyncio
+
 
 # import plotly.express as 
 
@@ -35,6 +41,8 @@ from wordcloud import WordCloud
 
 #import webpage image
 img = Image.open('resources\imgs\performing-twitter-sentiment-analysis1.png') 
+mask_img = Image.open('resources/imgs/PinClipart.com_call-out-clipart_1617111.png') 
+
 #Set the Page Title
 st.set_page_config(page_title= 'JHUST Inc.: Climate Change Sentiment Classification', page_icon= img )
 
@@ -46,6 +54,12 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
+async def load_data():
+	"""Function to load data asynchronously
+	"""	
+	
+	pass
+
 # Prediction Model
 news_vectorizer = open("resources/BNBModel.pkl","rb")
 tweet_cv = joblib.load(news_vectorizer) # loading your predictive model from the pkl file
@@ -53,8 +67,14 @@ tweet_cv = joblib.load(news_vectorizer) # loading your predictive model from the
 # Load your train_df data
 train_df = pd.read_csv("resources/train.csv")
 
-# Load your grouped sentiment data
+# Load the grouped sentiment data
 grouped_sent_df = pd.read_csv("resources/grouped_sentiment.csv")
+
+
+SENTIMENT_DICT = {
+	0: 'Anti-Climate Change', 1: 'Netral',
+	2: 'Pro-Climate Change', 3: 'Climate Change News Related'
+}
 
 # The main function where we will build the actual app
 def main():
@@ -69,8 +89,28 @@ def main():
 	# selection_2 = st.sidebar.selectbox("Choose Options", options_2)
 
 
+	mask = np.array(Image.open('resources/imgs/callout_1.png'))
+
+	# mask
+
+	def transform_format(val):
+		if val == 0:
+			return 255
+		else:
+			return val
+
+
+	trans_mask = np.ndarray((mask.shape[0],mask.shape[1]), np.int32)
+
+
+	for k in range(len(mask)):
+		# print(mask[k])
+		trans_mask[k] = list(map(transform_format,mask[k]))
 
 	def prepare_word_cloud_data(sentiment):
+
+
+
 		vect = TfidfVectorizer(stop_words='english',token_pattern = '[a-z]+\w*')
 		vecs = vect.fit_transform([grouped_sent_df.loc[[sentiment],'clean_msg'].values[0]])
 
@@ -87,7 +127,8 @@ def main():
 							max_words=200,
 							scale = 2,
 							width= 600,
-							height= 300).generate_from_frequencies(df)
+							height= 300,
+							mask = trans_mask).generate_from_frequencies(df)
 
 		return cloud
 
@@ -170,17 +211,41 @@ def main():
 	# Insights from EDA of the training dataset
 	def exploratory_data_analysis():
 		st.title('Exploratory Data Analysis')
-
-		fig = plt.figure(figsize=(12,6), dpi= 80)
-
-		plt.imshow(prepare_word_cloud_data(0), interpolation='bilinear')
-		plt.title('Common Words')
-		plt.axis('off')
-		st.pyplot(fig = fig)
-
-		st.image('resources/imgs/word_cloud.png'
-
+		st.markdown(
+			"""
+			EDA involves gathering insights on the state of our training data.
+			This would then create the basis of our approach in creating an effective
+			machine learning model.
+			"""
 		)
+
+		st.markdown(
+			"""
+			##### Data Distribution
+			"""
+		)
+
+		col1, col2 = st.columns([3,6])
+
+		with col1:
+			st.markdown('#### Word Distribution in Corpus')
+		with col2:
+			st.write('Common Words in **{}** sentiments'.format(SENTIMENT_DICT[0]))
+			fig = plt.figure(figsize=(10,8))
+
+
+			plt.imshow(prepare_word_cloud_data(1), interpolation='bilinear')
+			# plt.title('Common Words in {} sentiments'.format(SENTIMENT_DICT[0]))
+			plt.axis('off')
+			plt.tight_layout()
+
+			buf = BytesIO()
+			fig.savefig(buf, format='png')
+			st.image(buf)
+		# st.pyplot(fig = fig)
+
+
+
 
 		if st.checkbox('Load Modelling'):
 			# BROWSE_PAGES['Exploratory Data Analysis']()
