@@ -51,21 +51,28 @@ def main():
 	"""Tweet Classifier App with Streamlit """
 
 	SENTIMENT_DICT = {
-		0: 'Anti-Climate Change', 1: 'Netral',
+		0: 'Anti-Climate Change', 1: 'Neutral',
 		2: 'Pro-Climate Change', 3: 'Climate Change News Related'
 	}
 
 
 
-
+	@st.experimental_singleton
+	def load_vectorizer():
+		with open('resources/models/tfidfvect.pkl') as vectorizer:
+			vect = joblib.load(vectorizer)
+		return vect
 
 	@st.experimental_singleton
 	def load_models():
 		# Prediction Model
-		news_vectorizer = open("resources/BNBModel.pkl","rb")
-		tweet_cv = joblib.load(news_vectorizer) # loading your predictive model from the pkl file
+		with open("resources/models/BNBModel.pkl","rb") as model:
+			bnb_model = joblib.load(model) # loading your predictive model from the pkl file
 
-		return news_vectorizer
+		with open("resources/models/220405_MNB.pkl","rb") as model:
+			mnb_model = joblib.load(model) # loading your predictive model from the pkl file
+
+		return bnb_model, mnb_model
 
 	@st.experimental_singleton
 	def load_mask():
@@ -131,6 +138,16 @@ def main():
 		return cloud
 
 
+	@st.experimental_singleton
+	def prep_pred_text(text):
+		vectorizer = load_vectorizer()
+		df = pd.DataFrame(
+			{
+				'message': text,
+				'tweet_len':len(text)
+
+			}
+		) 
 
 	# if st.checkbox('Show train_df data'): # data is hidden if box is unchecked
 	# 	st.write(train_df[['sentiment', 'message']]) # will write the df to the page
@@ -283,22 +300,29 @@ def main():
 
 		with col1:
 			st.markdown('#### Model Selection')
-			model_options = ['Model 1:', 'Model 2:']
+			# model_options = ['Model 1:', 'Model 2:']
+			model_options = [str(i) for i in load_models()]
 			model_selection = st.selectbox('Select Model to Test:', model_options)
 			st.markdown('---')
-			if model_selection == 'Model 1:':
-				model = load_models()
+			if model_selection == 'BernoulliNB()':
+				model,_ = load_models()
 				st.markdown('{}'.format('this model'))
-			elif model_selection == 'Model 2:':
-				model = load_models()
-				st.markdown('{}'.format('this model'))
+			elif model_selection == 'MultinomialNB()':
+				_, model = load_models()
+				st.markdown('{}'.format('this other model'))
 
 		with col2:
-			tweet_text = st.text_area("Enter Tweet","Enter text here.")
+			tweet_text_area = st.empty()
+			tweet_text = tweet_text_area.text_area("Enter Tweet",placeholder="Type here.", key = 'tweet_text_area')
 			st.markdown('Else, select Random sample from test data.')
 
 			if st.button('Select Random'):
-				pass
+				text = tweet_text_area.text_area('Random Tweet', value = 'Random Text from Training data')
+
+			st.markdown('---')
+
+			if st.button('Predict Text'):
+				pred = model.predict(tweet_text)
 
 
 		pass
