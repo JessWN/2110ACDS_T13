@@ -15,6 +15,7 @@ The content is under the GNU icense & is free-to-use.
 """
 
 import time
+from pathlib import Path
 import streamlit as st
 
 # Streamlit dependencies
@@ -28,6 +29,7 @@ import numpy as np
 # Plotting of graphs
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
+import plotly.express as px
 
 
 # Data dependencies
@@ -38,6 +40,7 @@ import emoji
 import contractions
 from nltk.tokenize import TreebankWordTokenizer
 from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
 
 
 # Tokenizing the train dataset
@@ -79,7 +82,17 @@ def main():
 	# Declare constant variable dict for sentiment values
 	SENTIMENT_DICT = {
 		0: 'Anti-Climate Change', 1: 'Neutral',
-		2: 'Pro-Climate Change', 3: 'Climate Change News Related'
+		2: 'Pro-Climate Change', 3: 'Factual Pro-Climate Change'
+	}
+
+	SENTIMENT_DICT_ ={
+		-1: 'Anti-Climate Change', 0: 'Neutral',
+		1: 'Pro-Climate Change', 2: 'Factual Pro-Climate Change'
+	}
+
+	SENTIMENT_DICT_SHORT ={
+		-1: 'Anti', 0: 'Neutral',
+		1: 'Pro', 2: 'Factual'
 	}
 
 	# Function to load the text Vectorizers
@@ -182,7 +195,7 @@ def main():
 		        #remove urls
 		tweet = re.sub(
                 r'http[s]?://(?:[A-Za-z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9A-Fa-f][0-9A-Fa-f]))+',
-                'url-web', tweet)
+                '', tweet)
         #remove digits and words with digits
 		tweet = re.sub('\w*\d\w*','', tweet)
 		# print(str(model))
@@ -204,6 +217,8 @@ def main():
 		lemmatizer = WordNetLemmatizer()
 		lem_sentence=[]
 		for word in token_words:
+			if word in stopwords.words('english') or not word.isascii() or  word == 'rt':
+				continue
 			#just lemmmatize
 			lem_word = lemmatizer.lemmatize(word)
 			lem_sentence.append(lem_word)
@@ -212,31 +227,18 @@ def main():
 
 		prep_tweet_series = pd.Series(prep_tweet)
 
-		prep_tweet = vectorizer.transform(prep_tweet_series)
-		print(prep_tweet.shape)
+		prep_tweet_trans = vectorizer.transform(prep_tweet_series)
 
-		pred = model.predict(prep_tweet)
+		pred = model.predict(prep_tweet_trans)
 		
 
 
-		return pred, prep_tweet
+		return int(pred), prep_tweet
 
-		# vectorizer = load_vectorizer()
-		# df = pd.DataFrame(
-		# 	{
-		# 		'message': text,
-		# 		'tweet_len':len(text)
 
-		# 	}
-		# ) 
-
-	# if st.checkbox('Show train_df data'): # data is hidden if box is unchecked
-	# 	st.write(train_df[['sentiment', 'message']]) # will write the df to the page
-
-	# st.select_slider('Display Values', ['this', 'these', 'that'])
-
-	# Creates a main title and subheader on your page -
-	# these are static across all pages
+	# Read Markdown files
+	def read_markdown(file):
+		return Path(file).read_text()
 
 
 	# Introductory Page
@@ -270,21 +272,8 @@ def main():
 
 		with col1:
 			#Climate Change Narrative
-			st.markdown(
-				"""
-				##### Climate Change
-				Species on earth are dependent on optimum conditions for their survival, & human civilization is not exempted. Having
-				the right _temperature_, _sufficient water_, _clean air_, and _enough food_ are the **basic needs** to ensure for survival.
-				These needs are dependent on the **earth's climatic stability**.
+			st.markdown(read_markdown('resources/markdowns/climate_change.md'))
 
-				**Climate change** refers to shifts in the _earth's weather patterns_. Both **human activity** and **natural occurrences** contribute to climate change,
-				but the former has been the main driver since _industrialization in the 19th Century_. ie. With increased deforestation, combustion of fossil
-				fuels and livestock farming, the concentration of **greenhouse gases** has increased. These gases cause a greenhouse effect by trapping the sun's heat and escalating **global warming**.
-
-				**Warmer temperatures** disrupt the _natural climate cycles_ of the earth. These disruptions degrade the quality of the Earth's air and water, and is bound to become exacerbated if the
-				human race does not reverse its course.
-				"""
-			)
 
 		with col2:
 			st.text('')
@@ -306,48 +295,27 @@ def main():
 			st.image(twitter_logo)
 		with col2:
 			# Strategic Action Narrative
-			st.markdown(
-				"""
-				##### Strategic Action: Sentiment Analysis
-
-				In a bid to curb the rate of climate change, global organizations are invested into building their brands with emphasis on ensuring that their operations,
-				products & services are environmentally friendly and sustainable.
-				
-				To support market research on climate change, **JHUST Inc.** developed a **Machine Learning Classification model**, whose purpose is to determine people's **perception** of climate change,
-				and whether or not they believe it is a real threat. 
-				
-				Providing a robust ML solution will enable our clients to access to a broad base of **consumer sentiment**, spanning multiple demographic and geographic categories,
-				thus increasing their insights and informing **future marketing strategies**.
-				"""
-
-			)
+			st.markdown(read_markdown('resources/markdowns/strategic_action.md'))
 		
 
 		#Project Links
-		st.markdown(
-			"""
-			#### Project Links
-			[Github Repository][1] |
-			[Google Slides Presentation][2]
-
-			[1]: https://github.com/JessWN/2110ACDS_T13
-			[2]: https://docs.google.com/presentation/d/1-AIbZcDdUDmvVoIB4WoJcIZslbbdb6S9bujMNEgpuHw/edit?usp=sharing
-			[3]: 
-			[4]: 
-
-			"""
-		)
+		st.markdown(read_markdown('resources/markdowns/project_links.md'))
 
 		st.text('')
 		st.text('')
 
 
-		if st.checkbox('Load Exploratory Data Analysis'):
-			BROWSE_PAGES['Exploratory Data Analysis']()
+		if st.checkbox('Load Data Insights'):
+			BROWSE_PAGES['Data Insights']()
 
 
 	# Insights from EDA of the training dataset
-	def exploratory_data_analysis():
+	# @st.experimental_singleton(suppress_st_warning=True)
+	def data_insights():
+
+		train_df,_,_ = load_datasets()
+		global sentiment_select
+
 		st.title('Exploratory Data Analysis')
 		st.markdown(
 			"""
@@ -356,24 +324,101 @@ def main():
 			machine learning model.
 			"""
 		)
+		st.text('')
 
-		st.markdown(
-			"""
-			##### Data Distribution
-			"""
-		)
+		#Plot Pie Chart for Sentiment Distribution using matplotlib
+		# fig = plt.figure(figsize=(8,6))
+		# mycolors = ["navy", "cornflowerblue", "blue", "aqua"]
+		# train_df['sentiment'].value_counts(ascending = True).plot(kind = 'pie', 
+        #                                                   title = 'Sentiment Distribution', 
+        #                                                   xlabel = 'Sentiments',
+        #                                                  colors = mycolors
+        #                                                   )
+		# #setting the label names
+		# plt.legend(['Anti', 'Nuetral', 'Factual', 'Pro'], 
+		# 		loc ="lower right", bbox_to_anchor =(1.5, 0.15))
+		#show the plot
+		# st.pyplot(fig)
 
 		col1, col2 = st.columns([3,6])
 
 		with col1:
-			st.markdown('#### Word Distribution in Corpus')
-		with col2:
-			st.write('Common Words in **{}** sentiments'.format(SENTIMENT_DICT[0]))
-			fig = plt.figure(figsize=(10,8))
+			#Sentiment Distribution Narrative
+			st.markdown(read_markdown('resources/markdowns/sentiment_distribution.md'))
 
+
+		with col2:
+			#Plot Pie Chart for Sentiment Distribution
+			fig = px.pie(train_df['sentiment'],
+						values=train_df['sentiment'].value_counts().values,
+						# names=train_df['sentiment'].value_counts().index)
+						names= [SENTIMENT_DICT_[i] for i in train_df['sentiment'].value_counts().index])
+			fig.update_traces(hoverinfo='label+percent', textinfo='value+percent')
+
+			fig.update_layout(legend = dict(
+				yanchor= 'top', y = 1,
+				xanchor = 'left', x = -0.1,
+				bgcolor = 'rgba(0,0,0,0)'
+			))
+
+			st.plotly_chart(fig)
+
+		col1, col2 = st.columns([3,6])
+
+		with col1:
+			duplicated_sentiments = train_df[train_df.duplicated(['message'])]
+
+			fig = px.bar(duplicated_sentiments,
+						y = duplicated_sentiments['sentiment'].value_counts().values,
+						x= [SENTIMENT_DICT_SHORT[i] for i in duplicated_sentiments['sentiment'].value_counts().index],
+						width=300, height=300)
+			fig.update_layout(xaxis_title = 'Sentiments',
+								yaxis_title= 'Count of Duplicates',
+								bargap=0.3,
+								margin = dict(l=20, r=20,t=0,b=20)
+								)
+
+			st.plotly_chart(fig)
+		with col2:
+			st.markdown(
+				"""
+				##### Observation Duplicates
+				It was noted that the dataset held some duplicate values, especially favoring the 
+				Pro Climate Change Category.
+				It was necessary to deal with duplicates, to ensure our models receive unbiased data.
+				
+				"""
+			)
+
+
+
+
+
+
+		col1, col2 = st.columns([3,6])
+
+		with col1:
+			st.markdown("""
+			#### Word Distribution in Corpus
+			It is anticipated that different sentiments would have different keywords in the messages.
+			In this case, we generated wordclouds that highlight the most common words depending on sentiment.
+			Select  a sentiment below to generate the WordCloud for that sentiment
+			> It is anticipated that the major words would be similar, ie. 'global, climate'
+			""")
+
+			sentiment_options = [SENTIMENT_DICT[i] for i in [0,1,2,3]]
+			sentiment_select = st.selectbox('Select Sentiment', sentiment_options)
+
+		with col2:
+			val = list(SENTIMENT_DICT.keys())[list(SENTIMENT_DICT.values()).index(sentiment_select)]
+
+			st.text('')
+			st.text('')
+			st.markdown('Common Words in **{}** sentiments'.format(SENTIMENT_DICT[val]))
 
 			# Plot WordCloud
-			plt.imshow(prepare_word_cloud_data(1), interpolation='bilinear')
+			fig = plt.figure(figsize=(10,5))
+			plt.imshow(prepare_word_cloud_data(val), interpolation='bilinear')
 			# plt.title('Common Words in {} sentiments'.format(SENTIMENT_DICT[0]))
 			plt.axis('off')
 			plt.tight_layout()
@@ -383,87 +428,178 @@ def main():
 			st.image(buf)
 			# st.pyplot(fig = fig)
 
+		col1, col2 = st.columns([6,3])
+
+		with col1:
+			train_df['tweet_len'] = train_df['message'].astype(str).apply(len)
+
+			fig = px.histogram(train_df, train_df['tweet_len'],
+								nbins = 20,
+								# title = 'Distribution of Tweet Lengths',
+								width=600,height=300)
+			fig.update_layout(xaxis_title = 'Tweet Lengths',
+								margin = dict(l=20, r=20,t=10,b=20)
+								)
+
+			st.plotly_chart(fig)
+
+
+			#Plot Word Count Bar Graph
+			# train_df['word_count'] = train_df['message'].apply(lambda x : len(re.findall(r'/w+',x)))
+			# fig.update_layout(xaxis_title = 'Tweet Lengths',
+			# 					margin = dict(l=20, r=20,t=0,b=20)
+			# 					)
+			# fig = px.bar(
+			# 	train_df,
+			# 	x = [SENTIMENT_DICT_SHORT[i] for i in train_df['sentiment'].value_counts().index],
+			# 	y = train_df.groupby('sentiment')['word_count'].mean()
+			# )
+			# fig.update_layout(
+			# 	xaxis_title = 'Sentiment', yaxis_title = ''
+			# )
+
+			# st.plotly_chart(fig)
+
+
+		with col2:
+			# st.markdown(
+			# 	"""
+			# 	##### Additional Insights
+			# 	The following are basic insights to get from the data as well, & would show some
+			# 	significant differences that we exploited during model building.
+			# 	> Include charts for: Tweet lengths, stop words
+
+			# 	"""
+			# )	
+			st.markdown(
+				"""
+				##### Tweet Lengths
+				We provided a histogram of the length of tweets in the dataframe, which 
+				would come in handy once we carry out feature engineering during analysis of each sentiment independently.
+
+				> The feature engineering section is covered in the accompanying noteboo, accessible in the [Github repo][1]
+
+				[1]: https://github.com/JessWN/2110ACDS_T13
+				"""
+			)	
+
+
+
+
 
 
 
 		if st.checkbox('Load Modelling'):
 			# BROWSE_PAGES['Exploratory Data Analysis']()
-			BROWSE_PAGES['Modelling']()
+			BROWSE_PAGES['Models Performance']()
 			# pass
 
-	# Model Description Page
-	def modelling():
-		st.title("Tweet Classification Models")
-
-		model_options = ['Model 1:', 'Model 2:']
-
-		model_selection = st.selectbox("Choose Option", model_options)
-
-		if model_selection == 'Model 1:':
-			st.markdown(
-				"""
-				The model works as such with the folowing parameters. Weutlized the following paramters to achieve an accuracy score of X.
-				"""
-
-			)
-
-		elif model_selection == 'Model 2:':
-			st.markdown(
-				"""
-				The model works as such with the folowing parameters. Weutlized the following paramters to achieve an accuracy score of X.
-				"""
-
-			)
 
 	# Prediction Page
-	def prediction():
-		global model
+	def models_performance():
+		global model, model_title, text
 		lr_model, bnb_model, mnb_model = load_models()
 
 		st.title('Prediction')
 		st.markdown("""
-			In this section, users are able to generate a sentiment prediction based on the models that are included in this web application.
+			After training Machine Learning algorithms based on the available dataset, the resultant models were included
+			here for application.
 
-			You may provide a text series for prediction, or select a randomly selected one from the test dataset that has been included.
+			In this section:
+			- The model types are outlined below, as well as relevant performance metrics
+			- Users are able to generate a sentiment prediction based on the availed models.
+
+			> You can provide a text series for prediction, or select a randomly selected one from the dataset that has been included.
 		""")
-		col1, col2 = st.columns([3,8])
+		col1, col2 = st.columns([6,8])
 
 		with col1:
 			st.markdown('#### Model Selection')
-			# model_options = ['Model 1:', 'Model 2:']
+			#Model selections from list of loaded models
 			model_options = ['Model: \t{}'.format(str(j)) for i,j in enumerate(load_models())]
-			model_selection = st.selectbox('Select Model to Test:', model_options)
+			model_selection = st.selectbox('Select Model:', model_options)
 
+			#Logistic Regression
 			if 'Logistic' in model_selection:
-				st.text('Multinomial Naive Bayes Model')
 				model = lr_model
+				model_title = 'Logistic Regression Model'
 
+				st.markdown(
+					"""
+					##### Logistic Regression Model
+					The model utilizes a logistic functionality to compare the probability of an even occurrence.
+
+					For multivariable predictions, the model applies either a one-vs-many or one-vs-other workflow.
+					The model's basis is on making a naive assumption that the features provided are independent.
+
+					"""
+				)
+
+			#Bernoulli Naives Bayes
 			elif 'Bernoulli' in model_selection:
-				st.text('Bernoulli Naive Bayes Model')
 				model = bnb_model
+				model_title = 'Bernoulli Naive Bayes Model'
+				st.markdown(
+					"""
+					##### Binomial Naive Bayes Model
+					The model's basis is on making a naive assumption that the features provided are independent.
 
+					It also assumes that the features are drawn from a simple binomial distribution.
+					It is highly applicable to text data
+					"""
+				)
+
+			#Multinomial Naive Bayes
 			elif 'Multinomial' in model_selection:
-				st.text('Multinomial Naive Bayes Model')
 				model = mnb_model
+				model_title = 'Multinomial Naive Bayes Model'
+
+				st.markdown(
+					"""
+					##### Multinomial Naive Bayes Model
+					The model's basis is on making a naive assumption that the features provided are independent.
+
+					It also assumes that the features are drawn from a simple multinomial distribution ie, multiple binomial distributions
+					It is highly applicable to text data
+					"""
+				)
 
 			st.markdown('---')
 
+			people_sent = Image.open('resources/imgs/people_sentiment.jpeg')
+
+			st.image(people_sent)
+
+			st.markdown('{}🌍'.format(read_markdown('resources/markdowns/conclusion.md')))
+
+
+		#Prediction Column
 		with col2:
+			st.markdown('---')
+
+			st.markdown('#### Sentiment Prediction using {}'.format(model_title))
+
+			#Text Area for the tweet to be predicted
 			tweet_text_area = st.empty()
 			tweet_text = tweet_text_area.text_area("Enter Tweet",placeholder="Type here.", key = 'tweet_text_area')
+			text = tweet_text
 			st.markdown('Else, select Random sample from test data.')
 
-			if st.button('Select Random'):
-				train_df, _, test_df = load_datasets()
+			train_df, _, test_df = load_datasets()
+			if st.checkbox('Select Random'):
 				idx = int(np.random.randint(0,len(train_df),size=1))
-				text = tweet_text_area.text_area('Random Text from Training data', value = train_df.loc[idx, 'message'])
+				tweet_text = tweet_text_area.text_area('Random Text from Training data', value = train_df.loc[idx, 'message'])
+				text = tweet_text
 
-			st.markdown('---')
 
 			if st.button('Predict Text'):
-				pred, prep_tweet = prep_pred_text(tweet_text,model)
 
-				st.markdown('{} and \n {}'.format(pred,prep_tweet))
+				pred, prep_tweet = prep_pred_text(text,model)
+
+				st.markdown("""Predicted Sentiment: {}
+				
+				 {}""".format(pred,SENTIMENT_DICT_[pred]))
+				st.text_area('Stripped Text','{}'.format(prep_tweet))
 
 
 
@@ -472,10 +608,8 @@ def main():
 	#Dictionary of radio buttons & functions that are loaded depending on page selected
 	BROWSE_PAGES = {
 		'Home Page': introduction_page,
-		'Data Insights': exploratory_data_analysis,
-		'Models Description': modelling,
-		'Prediction': prediction
-
+		'Data Insights': data_insights,
+		'Models Performance': models_performance,
 	}
 
 	#Page Navigation Title & Radio BUttons
@@ -483,39 +617,11 @@ def main():
 	page = st.sidebar.radio('Go to:',list(BROWSE_PAGES.keys()))
 
 	#Load function depending on radio selected above.
+	#Used to navigate through pages
 	BROWSE_PAGES[page]()
 
 
 
-	# # Building out the "Information" page
-	# if selection == "Information":
-	# 	st.info("General Information")
-	# 	# You can read a markdown file from supporting resources folder
-	# 	st.markdown("Some information here")
-
-	# 	st.subheader("train_df Twitter data and label")
-
-	# 	if st.checkbox('Show train_df data'): # data is hidden if box is unchecked
-	# 		st.write(train_df[['sentiment', 'message']]) # will write the df to the page
-
-	# # Building out the predication page
-	# if selection == "Prediction":
-	# 	st.info("Prediction with ML Models")
-	# 	# Creating a text box for user input
-	# 	tweet_text = st.text_area("Enter Text","Type Here")
-
-	# 	if st.button("Classify"):
-	# 		# Transforming user input with vectorizer
-	# 		vect_text = tweet_cv.transform([tweet_text]).toarray()
-	# 		# Load your .pkl file with the model of your choice + make predictions
-	# 		# Try loading in multiple models to give the user a choice
-	# 		predictor = joblib.load(open(os.path.join("resources/Logistic_regression.pkl"),"rb"))
-	# 		prediction = predictor.predict(vect_text)
-
-	# 		# When model has successfully run, will print prediction
-	# 		# You can use a dictionary or similar structure to make this output
-	# 		# more human interpretable.
-	# 		st.success("Text Categorized as: {}".format(prediction))
 
 # Required to let Streamlit instantiate our web app.  
 if __name__ == '__main__':
