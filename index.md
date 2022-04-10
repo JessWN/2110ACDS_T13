@@ -42,12 +42,12 @@ This is a Natural Processing Language Multiclass classification problem that we 
 
 Watch the demo below for how the Web Application works:
 
-[!Web App Demo](https://www.youtube.com/watch?v=GimlxWKeJiE&t=4s)
+![Web App Demo](https://youtu.be/GimlxWKeJiE)
 
 ## Project Links
 Check out the links below for more a more detailed view:
 
-1. [Github Repository] (https://github.com/JessWN/2110ACDS_T13)
-2. [Jupyter Notebook] (https://github.com/JessWN/2110ACDS_T13/blob/main/2110ACDS_T13.ipynb)
+1. [Github Repository](https://github.com/JessWN/2110ACDS_T13)
+2. [Jupyter Notebook](https://github.com/JessWN/2110ACDS_T13/blob/main/2110ACDS_T13.ipynb)
 3. [Code for Web App](https://github.com/JessWN/2110ACDS_T13/blob/main/base_app.py)
 4. [Project Presentation](https://docs.google.com/presentation/d/1-AIbZcDdUDmvVoIB4WoJcIZslbbdb6S9bujMNEgpuHw/edit?usp=sharing) 
