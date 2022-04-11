@@ -42,7 +42,8 @@ This is a Natural Processing Language Multiclass classification problem that we 
 
 Watch the demo below for how the Web Application works:
 
-![Web App Demo](https://youtu.be/GimlxWKeJiE)
+[![Web App Demo](imgs/Streamlit_screeshot.png)](https://youtu.be/GimlxWKeJiE)
+
 
 ## Project Links
 Check out the links below for more a more detailed view:
