@@ -1,5 +1,3 @@
-Package                       Version
------------------------------ -----------
 emoji                         1.7.0
 matplotlib                    3.5.1
 nltk                          3.7
